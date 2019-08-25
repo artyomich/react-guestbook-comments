@@ -1,43 +1,50 @@
 <?php
 /* 
  * API for to store and list all comments
- * PHP and SQLite using PDO
+ * PHP and XML
  */
 $_POST = isset($_POST['name']) ? : json_decode(file_get_contents("php://input"), true);
 // Simple CORS
 header("Access-Control-Allow-Origin: *");
 
-// Set default timezone
-date_default_timezone_set('UTC');
+// Set default timezone Moscow
+date_default_timezone_set('Europe/Moscow');
+
 
 /**************************************
- * SQLite DB connection using PDO      *
+ * XML load using SimpleXML           *
  **************************************/
-$dsn = 'sqlite:comm.sqlite';
+$fileXML = 'comments.xml';
 
-try {
-	$dbh = new PDO($dsn);
-	// Set error mode to exceptions
-	$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-	// Initialize db table
-	initialize_db($dbh);
-
-} catch (PDOException $e) {
-	json_response(['error' => 'Unable to open db connection '], 500);
+if (file_exists($fileXML)) {
+    $posts = simplexml_load_file($fileXML);
+} else {
+    $err = "Can't load file " . $fileXML;
+    json_response(['error' => $err], 500);
+    exit($err);
 }
-
-// Uncomment to empty the databsae
-// empty_comments($dbh);
 
 /**************************************
  * Handle Post comment                 *
  **************************************/
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+    //10 sec limit between actions
+    $lastSessionId = (string)$posts['last_session_id'];
+    $lastUpdateTimestamp = (int)$posts['last_update_timestamp'];
+
+/*    if (($lastSessionId == @$_POST['name']) && (now() - $lastUpdateTimestamp < 10)) {
+        $err = '10 sec limit between user\'s comments! ';
+        json_response(['error' => $err], 422);
+        exit($err . now());
+    }*/
+
 	// Inputs
 	$name = @$_POST['name'];
 	$comment = @$_POST['message'];
+    //$parentId = @$_POST['parent_id'];
+    $parentId = 0;
 
 	// Validate the input
 	if (strlen($name) < 3) {
@@ -45,54 +52,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	}
 
 	if (strlen($comment) < 5) {
-		json_response(['error' => 'Comments is required!'], 422);
+		json_response(['error' => 'Comment is required!'], 422);
 	}
 
-	$data = ['name' => $name, 'message' => $comment];
+	$data = [
+	    'id' => (int)$posts['last_id'] + 1,
+        'name' => $name,
+        'message' => $comment,
+        'parent_id' => $parentId
+    ];
 
-	save_comment($data, $dbh);
+	save_comment($data + ['time' => time(), 'lastSessionId' => $lastSessionId], $posts, $fileXML);
 
-	json_response(transform($data + ['id' => $dbh->lastInsertId(), 'time' => time()]), 201);
+	json_response(transform($data + ['time' => time()]), 201);
 }
 
 /**************************************
  * Return list of Comments             *
  **************************************/
-$result = $dbh->query('SELECT * FROM comments ORDER BY id DESC', PDO::FETCH_ASSOC);
 
-$comments = $result ? $result->fetchAll() : [];
+// Read xml and print the results:
+foreach ($posts->children() as $post) {
+    $comments[] = time_elapsed_string((int)$post->time);
+}
 
-// Transform result
 $comments = array_map('transform', $comments);
 
+// Transform result
 json_response($comments);
 
 
 /************************************** Helper functions *************************************/
 
 /*
- * Save a comment in db
+ * Save a comment in xml
  * 
  * @param $data
- * @param $dbh
+ * @param $posts
+ * @param $file
  * @return boolean
  */
-function save_comment($data, $dbh)
+function save_comment($data, $posts, $file)
 {
-	// Prepare statement 
-	$statement = $dbh->prepare(
-		"INSERT INTO comments 
-			(name, message, time) 
-		VALUES
-			(:name, :message, :time)"
-	);
+	// Prepare statement
+    $options = $posts->addChild('options');
+    $options->addAttribute('last_id', strip_tags($data['id']));
+    $options->addAttribute('last_session_id', strip_tags($data['lastSessionId']));
+    $options->addAttribute('last_update_timestamp', strip_tags(strip_tags($data['time'])));
 
-	// Bind and execute
-	return $statement->execute(array(
-		"name" => strip_tags($data['name']),
-		"message" => strip_tags($data['message']),
-		"time" => time()
-	));
+    $post = $posts->addChild('post');
+    $post->addChild('id', strip_tags($data['id']));
+    $post->addChild('name', strip_tags($data['name']));
+    $post->addChild('message', strip_tags($data['message']));
+    $post->addChild('parent_id', strip_tags($data['parent_id']));
+    $post->addChild('time', strip_tags($data['time']));
+
+    // Bind and execute
+	return $posts->asXML($file);
 }
 
 /**
@@ -105,25 +121,11 @@ function json_response($data, $status_code = 200)
 {
 	http_response_code($status_code);
 	header('Content-Type: application/json');
-	global $dbh;
-	$dbh = null;
+	global $posts;
+    $posts = null;
 	die(json_encode($data));
 }
 
-/**
- * Initialize db with table
- * 
- * @param $dbh
- */
-function initialize_db($dbh)
-{
-	// Create comments table if not exists
-	$dbh->exec("CREATE TABLE IF NOT EXISTS comments (
-        id INTEGER PRIMARY KEY, 
-        name VARCHAR,
-        message TEXT,
-        time INTEGER)");
-}
 
 /*
  * Transform record from db
@@ -135,21 +137,11 @@ function transform($comm)
 {
 	return [
 		'id' => (int)$comm['id'],
+        'parent_id' => (int)$comm['parent_id'],
 		'name' => $comm['name'],
 		'message' => $comm['message'],
-		'time' => time_elapsed_string($comm['time']),
+		'time' => time_elapsed_string((int)$comm['time']),
 	];
-}
-
-/**
- * Empty all comments 
- * 
- * @param $dbh
- */
-function empty_comments($dbh)
-{
-	$dbh->query('DELETE FROM comments');
-	$dbh->query('VACUUM');
 }
 
 function time_elapsed_string($datetime, $full = false)

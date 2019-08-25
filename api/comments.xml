@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<posts last_id="3" last_session_id="Гриша" last_update_timestamp="1532645879">
+    <post>
+        <id>1</id>
+        <name>Вася</name>
+        <message>FSAFdsf</message>
+        <parent_id>0</parent_id>
+        <time>1532645879</time>
+    </post>
+    <post>
+        <id>2</id>
+        <name>Петя</name>
+        <message>цуауцауц</message>
+        <parent_id>0</parent_id>
+        <time>1532645879</time>
+    </post>
+    <post>
+        <id>3</id>
+        <name>Гриша</name>
+        <message>фафыафыва</message>
+        <parent_id>1</parent_id>
+        <time>1542645879</time>
+    </post>
+</posts>

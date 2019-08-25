@@ -17,7 +17,7 @@ export default function Comment(props) {
         <small className="float-right text-muted">{time}</small>
         <h6 className="mt-0 mb-1 text-muted">{name}</h6>
         {message}
-        <button class="btn btn-primary float-right text-white">Comment</button>
+        <button className ="btn btn-primary float-right text-white">Comment</button>
       </div>
     </div>
   );

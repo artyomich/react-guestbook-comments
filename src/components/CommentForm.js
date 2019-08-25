@@ -9,7 +9,8 @@ export default class CommentForm extends Component {
 
       comment: {
         name: "",
-        message: ""
+        message: "",
+        parent_id: ""
       }
     };
 
@@ -118,6 +119,15 @@ export default class CommentForm extends Component {
           </div>
 
           {this.renderError()}
+
+          <div className="form-group">
+                <input
+                    className="form-control"
+                    placeholder="Parent_ID"
+                    name="parent_id"
+                    type="text"
+                />
+            </div>
 
           <div className="form-group">
             <button disabled={this.state.loading} className="btn btn-primary">
