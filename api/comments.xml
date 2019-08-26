@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root>
-    <posts last_id="3" last_session_id="afsdf" last_update_timestamp="1566816024">
+    <posts last_id="4" last_session_id="Grisha" last_update_timestamp="1542645879">
         <post>
             <id>1</id>
             <name>John</name>
@@ -18,9 +18,9 @@
         <post>
             <id>3</id>
             <name>Grisha</name>
-            <message>Grisha's comment</message>
+            <message>Grisha's comment to Petya comment</message>
             <parent_id>1</parent_id>
             <time>1542645879</time>
         </post>
-   </posts>
+    </posts>
 </root>

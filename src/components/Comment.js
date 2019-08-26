@@ -1,10 +1,11 @@
 import React from "react";
 
+
 export default function Comment(props) {
-  const { name, message, time } = props.comment;
+  const { id, name, message, time, parent_id } = props.comment;
 
   return (
-    <div className="media mb-3">
+    <div className={parent_id > 0 ? "media mb-3 ml-5" : "media mb-3"} >
       <img
         className="mr-3 bg-light rounded"
         width="48"
@@ -14,10 +15,12 @@ export default function Comment(props) {
       />
 
       <div className="media-body p-2 shadow-sm rounded bg-light border">
-        <small className="float-right text-muted">{time}</small>
+        <small className="float-right text-muted">#{id} ({time})</small>
         <h6 className="mt-0 mb-1 text-muted">{name}</h6>
         {message}
-        <button className ="btn btn-primary float-right text-white">Comment</button>
+        <form>
+            <button className ="btn btn-primary float-right text-white">💬 Comment</button>
+        </form>
       </div>
     </div>
   );

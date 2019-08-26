@@ -1,13 +1,15 @@
 <?php
-/* 
+/**
  * API for to store and list all comments
  * PHP and XML
  */
 $_POST = isset($_POST['name']) ? : json_decode(file_get_contents("php://input"), true);
+
 // Simple CORS
 header("Access-Control-Allow-Origin: *");
 // Set default timezone Moscow
 date_default_timezone_set('Europe/Moscow');
+
 /**************************************
  * XML load using SimpleXML           *
  **************************************/
@@ -19,8 +21,9 @@ if (file_exists($fileXML)) {
     jsonResponse(['error' => $err], 500);
     exit($err);
 }
+
 /**************************************
- * Handle Post comment                 *
+ * Handle Post comment                *
  **************************************/
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
@@ -36,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } else {
                 $err = 'In XML attritute structure unresolved element with key: ' . $key . ', and value: ' . $value;
                 jsonResponse(['error' => $err], 500);
-                exit($err . now());
+                exit($err . time());
             }
         }
         break;
@@ -55,14 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         //error 429 - Too Many Request
         $err = '10 sec limit between user\'s comments! ';
         jsonResponse(['error' => $err], 429);
-        exit($err . now());
+        exit($err . time());
     }
 
     // Inputs
     $name = @$_POST['name'];
     $comment = @$_POST['message'];
-    //$parentId = @$_POST['parent_id'];
-    $parentId = 0;
+    $parentId = (int)@$_POST['parent_id'];
     $time = time();
 
     // Validate the input
@@ -81,8 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     saveComment($data + ['time' => $time, 'lastSessionId' => $currentSessionId], $xmlRoot, $fileXML);
     jsonResponse(transform($data + ['time' => time()]), 201);
 }
+
 /**************************************
- * Return list of Comments             *
+ * Return list of Comments            *
  **************************************/
 // Read xml and print the results:
 foreach ($xmlRoot->children() as $posts) {
@@ -94,12 +97,13 @@ foreach ($xmlRoot->children() as $posts) {
 
 // Transform result
 jsonResponse($comments);
+
 /************************************** Helper functions *************************************/
-/*
+/**
  * Save a comment in xml
  *
  * @param $data
- * @param $posts
+ * @param $xmlRoot
  * @param $file
  * @return boolean
  */
@@ -122,11 +126,11 @@ function saveComment($data, $xmlRoot, $file)
    return $xmlRoot->asXML($file);
 }
 
-/*
+/**
  * Update a comment in xml
  *
  * @param $data
- * @param $posts
+ * @param $xmlRoot
  * @param $file
  * @return boolean
  */
@@ -163,7 +167,8 @@ function jsonResponse($data, $status_code = 200)
     $xmlRoot = null;
     die(json_encode($data));
 }
-/*
+
+/**
  * Transform record from db
  *
  * @param $comm
@@ -179,6 +184,14 @@ function transform($comm)
         'time' => time_elapsed_string((int)$comm['time']),
     ];
 }
+
+/**
+ * From unix time to time elapsed string
+ *
+ * @param $datetime
+ * @param $full
+ * @return array
+ */
 function time_elapsed_string($datetime, $full = false)
 {
     $now = new DateTime;

@@ -8,6 +8,7 @@ export default class CommentForm extends Component {
       error: "",
 
       comment: {
+        id: "",
         name: "",
         message: "",
         parent_id: ""
@@ -67,7 +68,7 @@ export default class CommentForm extends Component {
           // clear the message box
           this.setState({
             loading: false,
-            comment: { ...comment, message: "" }
+            comment: { ...comment, message: "", parent_id: "" }
           });
         }
       })
@@ -118,16 +119,19 @@ export default class CommentForm extends Component {
             />
           </div>
 
-          {this.renderError()}
 
           <div className="form-group">
-                <input
-                    className="form-control"
-                    placeholder="Parent_ID"
-                    name="parent_id"
-                    type="text"
-                />
-            </div>
+            <input
+                onChange={this.handleFieldChange}
+                value={this.state.comment.parent_id}
+                className="form-control"
+                placeholder="🤠 Parent ID"
+                name="parent_id"
+                type="text"
+            />
+          </div>
+
+          {this.renderError()}
 
           <div className="form-group">
             <button disabled={this.state.loading} className="btn btn-primary">
