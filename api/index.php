@@ -81,24 +81,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'parent_id' => $parentId
     ];
     saveComment($data + ['time' => $time, 'lastSessionId' => $currentSessionId], $xmlRoot, $fileXML);
+    //sortComments($xmlRoot);
     jsonResponse(transform($data + ['time' => time()]), 201);
 }
 
+if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+    $id = @$_DELETE['id'];
+
+}
 /**************************************
  * Return list of Comments            *
  **************************************/
 // Read xml and print the results:
+$comments = [];
 foreach ($xmlRoot->children() as $posts) {
     foreach ($posts->children() as $post) {
         $comments[] = $post;
     }
 }
+
 //$comments = array_map('transform', $comments);
 
 // Transform result
 jsonResponse($comments);
 
 /************************************** Helper functions *************************************/
+
 /**
  * Save a comment in xml
  *
@@ -119,7 +127,7 @@ function saveComment($data, $xmlRoot, $file)
         $post->addChild('id', strip_tags($data['id']));
         $post->addChild('name', strip_tags($data['name']));
         $post->addChild('message', strip_tags($data['message']));
-        $post->addChild('parent_id', strip_tags($data['parent_id']));
+        $post->addChild('parent_id', $data['parent_id']);
         $post->addChild('time', strip_tags($data['time']));
     }
     // Bind and execute
